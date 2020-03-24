@@ -26,7 +26,9 @@ covid <- covid %>%
   mutate(date2 = as.Date(dateChecked)) %>% 
   group_by(state) %>% 
   mutate(positive_growth     = (positive - dplyr::lag(positive, order_by = date))/positive,
-         positive_additional =  positive - dplyr::lag(positive, order_by = date)
+         positive_additional =  positive - dplyr::lag(positive, order_by = date),
+         death_rate_positive = death / positive,
+         death_rate_hospitalized = death / hospitalized,
          ) %>% 
   ungroup()
 
@@ -41,6 +43,10 @@ Total positive cases: `r scales::comma(covid_total$positive)`
 
 Total hospitalized: `r scales::comma(covid_total$hospitalized)`
 
+Total death rate: `r scales::percent(covid_total$death / covid_total$positive, accuracy = 0.1)` of positive cases.
+
+Total death rate: `r scales::percent(covid_total$death / covid_total$hospitalized, accuracy = 0.1)` of hospitalizations.
+
 ```{r}
 
 selectInput("PlotType", label = h4("Plot"), 
@@ -48,7 +54,9 @@ selectInput("PlotType", label = h4("Plot"),
                    "Hospitalized" = 2,
                    "Deaths" = 3, 
                    "Daily new cases" = 4, 
-                   "Percent growth" = 5
+                   "Percent growth" = 5,
+                   "Death rate (relative to positive cases)" = 6,
+                   "Death rate (relative to hospitalizations)" = 7
                    ), 
     selected = 1)
 
@@ -93,6 +101,16 @@ renderPlotly({
     Y = "positive_growth"
     TITLE = "Daily percent growth of positive cases of COVID-19 in United States"
     
+  } else if (input$PlotType == 6) {
+    
+    Y = "death_rate_positive"
+    TITLE = "Death rates as percentage of positive cases of COVID-19 in United States"
+    
+  } else if (input$PlotType == 7) {
+    
+    Y = "death_rate_hospitalized"
+    TITLE = "Death rates as percentage of hospitalized cases of COVID-19 in United States"
+    
   }
 
   g <- covid %>% 
@@ -111,9 +129,18 @@ renderPlotly({
   
   if (input$Log) { g <- g + scale_y_log10() }
   
-  if (input$PlotType == 5) { 
+  if (input$PlotType %in% c(5, 6, 7)) { 
+    
+    if (input$Log) {
+      
+      g <- g + scale_y_log10(labels = scales::percent_format(accuracy = 1))
+    
+    } else {
+      
       g <- g + scale_y_continuous(labels = scales::percent_format(accuracy = 1))
+      
     }
+  }
       
   ggplotly(g)
   
