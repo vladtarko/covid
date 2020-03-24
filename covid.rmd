@@ -1,0 +1,138 @@
+---
+title: "Covid-19 in United States"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+    theme: yeti
+    source_code: embed
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(tidyverse)
+library(plotly)
+
+theme_set(ggthemes::theme_hc() +
+            theme(axis.text.x = element_text(angle = 45)) 
+          )
+
+covid <- read_csv("http://covidtracking.com/api/states/daily.csv")
+covid_total <- read_csv("https://covidtracking.com/api/us.csv")
+
+covid <- covid %>% 
+  #mutate(date1 = date %>% as.character() %>% as.Date(format = "%Y%m%d")) %>%
+  mutate(date2 = as.Date(dateChecked)) %>% 
+  group_by(state) %>% 
+  mutate(positive_growth     = (positive - dplyr::lag(positive, order_by = date))/positive,
+         positive_additional =  positive - dplyr::lag(positive, order_by = date)
+         ) %>% 
+  ungroup()
+
+date_last <- covid$date2 %>% max
+```
+
+# Inputs {.sidebar}
+
+Total deaths: `r scales::comma(covid_total$death)`
+
+Total positive cases: `r scales::comma(covid_total$positive)`
+
+Total hospitalized: `r scales::comma(covid_total$hospitalized)`
+
+```{r}
+
+selectInput("PlotType", label = h4("Plot"), 
+    choices = list("Positive cases" = 1,
+                   "Hospitalized" = 2,
+                   "Deaths" = 3, 
+                   "Daily new cases" = 4, 
+                   "Percent growth" = 5
+                   ), 
+    selected = 1)
+
+checkboxInput("Log", label = "Logarithmic scale", value = TRUE)
+
+selectInput("States", label = h4("States"), 
+    choices = covid$state %>% unique,
+    selected = covid$state %>% unique,
+    multiple = TRUE)
+```
+
+
+# Plots
+
+```{r, fig.width=10}
+
+renderPlotly({
+  
+  if (input$PlotType == 1) {
+  
+    Y = "positive"
+    TITLE = "Positive cases of COVID-19 in United States"
+  
+  
+  } else if (input$PlotType == 2) {
+    
+    Y = "hospitalized"
+    TITLE = "Hospitalized cases of COVID-19 in United States"
+    
+  } else if (input$PlotType == 3) {
+    
+    Y = "death"
+    TITLE = "Deaths of COVID-19 in United States"
+    
+  } else if (input$PlotType == 4) {
+    
+    Y = "positive_additional"
+    TITLE = "Daily new positive cases of COVID-19 in United States"
+    
+  } else if (input$PlotType == 5) {
+    
+    Y = "positive_growth"
+    TITLE = "Daily percent growth of positive cases of COVID-19 in United States"
+    
+  }
+
+  g <- covid %>% 
+    filter(state %in% input$States) %>% 
+    ggplot(aes_string("date2", Y, color = Y)) +
+      #geom_line() +
+      geom_point(size = 0.5) +
+      scale_x_date(breaks = c(date_last - 15, date_last - 10, date_last - 5, date_last),
+                   date_labels = "%b %d") +
+      scale_color_gradient2(low = "green", mid = "blue", high = "red", 
+                            guide = "none", 
+                            trans = "log") +
+      facet_wrap(~state) +  
+      labs(title = TITLE, x = "", y = "",
+           caption = "Data from htttp://covidtracking.org")
+  
+  if (input$Log) { g <- g + scale_y_log10() }
+  
+  if (input$PlotType == 5) { 
+      g <- g + scale_y_continuous(labels = scales::percent_format(accuracy = 1))
+    }
+      
+  ggplotly(g)
+  
+
+})
+
+```
+
+
+# About
+
+> Data comes from [The COVID Tracking Project](https://covidtracking.com/) which aggregates official numbers:
+
+Where do you get your data?
+
+All our information comes from state/district/territory public health authorities—or, occasionally, from trusted news reporting, official press conferences, or (very occasionally) tweets or Facebook updates from state public health authorities or governors. We cite all sources in the spreadsheet and discuss the dataset’s constantly fluctuating oddities in the annotations that accompany each state’s data on [our website](https://covidtracking.com/data/) and in the [spreadsheet](https://docs.google.com/spreadsheets/u/2/d/e/2PACX-1vRwAqp96T9sYYq2-i7Tj0pvTf6XVHjDSMIKBdZHXiCGGdNC0ypEU9NbngS8mxea55JuCFuua1MUeOj5/pubhtml#).
+ 
+How trustworthy are your numbers?
+ 
+We get the bulk of our data directly from state public health authorities, so we’re as reliable as they are, though we don’t have a live feed, so our numbers can be a few hours behind. States, however, report their numbers in inconsistent ways, which makes working with this dataset a bit complicated. Some states, like Oregon, provide the full set of numbers we track: the total number of tests conducted, breaking out positive, negative, and pending tests. For these states, we can provide data stretching through time, so they are maximally useful.
+ 
+Other states provide some or none of these numbers on an ongoing basis. Some crucial states in this outbreak, notably California, Washington, and New York, have not been regularly reporting their total number of people tested. For these, we have to use other reporting tools: directly asking state officials, watching news conferences, gleaning information from trusted news sources, and whatever else it takes to present reliable numbers. Our hope is that all the states will begin providing comprehensive statistics, including negatives and totals from commercial and university labs.
