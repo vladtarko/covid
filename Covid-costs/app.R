@@ -37,8 +37,10 @@ ui <- fluidPage(
            h4("Results"),
            plotOutput("resultsPlot"),
            checkboxInput("Log", label = "Logarithmic scale", value = TRUE),
-           h6("The costs for a given age group are calculated with the formula:"),
-           h6("costs = percent_infected * risk_infection * population * (risk_death * value_life + cost_longterm)")
+           h5("The costs for a given age group are calculated with the formula:"),
+           h5("costs = percent_infected * risk_infection * population * (risk_death * value_life + cost_longterm)"),
+           h1(),
+           h5("Source code:", a("https://github.com/vladtarko/covid/"))
         )
     )
 )
