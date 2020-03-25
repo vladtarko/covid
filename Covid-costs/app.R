@@ -10,13 +10,13 @@ options(knitr.kable.NA = 'unknown')
 
 df <- tribble(
         ~age, ~risk_death, ~social_dist, ~value_life, ~cost_longterm, ~population,
-        "< 10",           0,          0,         8e6,          0.5e6,   39721484,
-        "10-19",      0.0018,         0,        9e6,          0.5e6,   42332395,
-        "20-49",      0.0032,       0.5,        7e6,          0.5e6,  131110742,
-        "50-59",       0.013,       0.5,        6e6,          0.5e6,   42120077,
-        "60-69",       0.036,       0.8,        5e6,          0.5e5,   38488170,
-        "70-79",        0.08,       0.8,        4e6,          0.5e4,   24082597,
-        ">= 80",       0.148,       0.8,        3e6,              0,   13147182
+        "< 10",           0,          0,         8e6,          0.5e6,    39721484,
+        "10-19",      0.0018,         0,         9e6,          0.5e6,    42332395,
+        "20-49",      0.0032,       0.5,         7e6,          0.5e6,   131110742,
+        "50-59",       0.013,       0.5,         6e6,          0.5e6,    42120077,
+        "60-69",       0.036,       0.8,         5e6,          0.5e5,    38488170,
+        "70-79",        0.08,       0.8,         4e6,          0.5e4,    24082597,
+        ">= 80",       0.148,       0.8,         3e6,              0,    13147182
     )
 
 # Define UI for application that draws a histogram
@@ -34,27 +34,24 @@ ui <- fluidPage(
 
         # Show a plot of the generated distribution
         column(width = 6,
-           h4("Results"),
+           #h4("Results"),
            
-           tabsetPanel(type = "tabs",
+           tabsetPanel(type = "pills",
                        tabPanel("Deaths", 
                                 plotOutput("deathsPlot"),
                                 checkboxInput("log_deaths", label = "Logarithmic scale", value = FALSE),
                                 h5("The deaths for a given age group are calculated with the formula:"),
-                                h5("deaths = percent_infected * (1 - social_distancing) * population * risk_death"),
-                                h1(),
-                                h5("Source code:", a("https://github.com/vladtarko/covid/"))
+                                h5("deaths = percent_infected * (1 - social_distancing) * population * risk_death")
                                 ),
                        tabPanel("Costs", 
                                 plotOutput("costsPlot"),
                                 checkboxInput("log_costs", label = "Logarithmic scale", value = TRUE),
                                 h5("The costs for a given age group are calculated with the formula:"),
-                                h5("costs = percent_infected * (1 - social_distancing) * population * (risk_death * value_life + cost_longterm)"),
-                                h1(),
-                                h5("Source code:", a("https://github.com/vladtarko/covid/"))
+                                h5("costs = percent_infected * (1 - social_distancing) * population * (risk_death * value_life + cost_longterm)")
                                 )
-           )
-           
+           ),
+           h1(),
+           h5("Source code:", a("https://github.com/vladtarko/covid/"))
            
         )
     )

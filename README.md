@@ -4,10 +4,18 @@ One for tracking COVID-19 in United States:
 
 - Uses data from <http://covidtracking.com>.
 
+- Code is in file "covid.rmd"
+
 - Link to the live app: <http://tarko.shinyapps.io/covid>
 
 One for calculating the social costs under different scenarios and assumptions:
 
+- Code is in folder "Covid-costs"
+
 - Link to live app: <https://tarko.shinyapps.io/Covid-costs/>
 
-![Social costs of COVID-19 in United States](figures/covid-social-costs.png)
+![Default assumptions](figures/assumptions.png)
+
+![Expected deaths](figures/deaths.png)
+
+![Social costs](figures/covid-social-costs.png)
