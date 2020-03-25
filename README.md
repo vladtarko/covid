@@ -2,7 +2,7 @@ Two COVID-19 related shiny apps:
 
 One for tracking COVID-19 in United States:
 
-- Uses data from <http://covidtracking.com>.
+- Uses data from <http://covidtracking.com>. 
 
 - Code is in file "covid.rmd"
 
