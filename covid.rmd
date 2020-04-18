@@ -14,10 +14,6 @@ library(flexdashboard)
 library(tidyverse)
 library(plotly)
 
-theme_set(ggthemes::theme_hc() +
-            theme(axis.text.x = element_text(angle = 45)) 
-          )
-
 covid <- read_csv("http://covidtracking.com/api/states/daily.csv")
 covid_total <- read_csv("https://covidtracking.com/api/us.csv")
 
@@ -33,6 +29,51 @@ covid <- covid %>%
   ungroup()
 
 date_last <- covid$date2 %>% max
+date_first <- covid$date2 %>% min
+date_step <- (date_last - date_first) / 4 %>% round()
+
+select_plot <- function(plot_type) {
+  
+  if (plot_type == 1) {
+    
+    Y = "positive"
+    TITLE = "Positive cases of COVID-19 in United States"
+  
+  } else if (plot_type == 2) {
+    
+    Y = "hospitalized"
+    TITLE = "Hospitalized cases of COVID-19 in United States"
+    
+  } else if (plot_type == 3) {
+    
+    Y = "death"
+    TITLE = "Deaths of COVID-19 in United States"
+    
+  } else if (plot_type == 4) {
+    
+    Y = "positive_additional"
+    TITLE = "Daily new positive cases of COVID-19 in United States"
+    
+  } else if (plot_type == 5) {
+    
+    Y = "positive_growth"
+    TITLE = "Daily percent growth of positive cases of COVID-19 in United States"
+    
+  } else if (plot_type == 6) {
+    
+    Y = "death_rate_positive"
+    TITLE = "Death rates as percentage of positive cases of COVID-19 in United States"
+    
+  } else if (plot_type == 7) {
+    
+    Y = "death_rate_hospitalized"
+    TITLE = "Death rates as percentage of hospitalized cases of COVID-19 in United States"
+    
+  }
+  
+  return(list(Y = Y, TITLE = TITLE))
+}
+
 ```
 
 # Inputs {.sidebar}
@@ -69,71 +110,50 @@ selectInput("States", label = h4("States"),
 ```
 
 
-# Plots
+# Trends
 
 ```{r, fig.width=10}
 
 renderPlotly({
   
-  if (input$PlotType == 1) {
+  ll <- select_plot(input$PlotType)
   
-    Y = "positive"
-    TITLE = "Positive cases of COVID-19 in United States"
-  
-  
-  } else if (input$PlotType == 2) {
-    
-    Y = "hospitalized"
-    TITLE = "Hospitalized cases of COVID-19 in United States"
-    
-  } else if (input$PlotType == 3) {
-    
-    Y = "death"
-    TITLE = "Deaths of COVID-19 in United States"
-    
-  } else if (input$PlotType == 4) {
-    
-    Y = "positive_additional"
-    TITLE = "Daily new positive cases of COVID-19 in United States"
-    
-  } else if (input$PlotType == 5) {
-    
-    Y = "positive_growth"
-    TITLE = "Daily percent growth of positive cases of COVID-19 in United States"
-    
-  } else if (input$PlotType == 6) {
-    
-    Y = "death_rate_positive"
-    TITLE = "Death rates as percentage of positive cases of COVID-19 in United States"
-    
-  } else if (input$PlotType == 7) {
-    
-    Y = "death_rate_hospitalized"
-    TITLE = "Death rates as percentage of hospitalized cases of COVID-19 in United States"
-    
-  }
+  Y     = ll$Y
+  TITLE = ll$TITLE
 
   g <- covid %>% 
     filter(state %in% input$States) %>% 
     ggplot(aes_string("date2", Y, color = Y)) +
       #geom_line() +
-      geom_point(size = 0.5) +
-      scale_x_date(breaks = c(date_last - 15, date_last - 10, date_last - 5, date_last),
+      geom_point(size = 2.03 - length(input$States)*0.03) +
+      scale_x_date(breaks = c(date_last - 3*date_step, 
+                              date_last - 2*date_step, 
+                              date_last - 1*date_step, 
+                              date_last),
                    date_labels = "%b %d") +
+      scale_y_continuous(labels = scales::comma) +
       scale_color_gradient2(low = "green", mid = "blue", high = "red", 
                             guide = "none", 
                             trans = "log") +
       facet_wrap(~state) +  
       labs(title = TITLE, x = "", y = "",
-           caption = "Data from htttp://covidtracking.org")
+           caption = "Data from htttp://covidtracking.org") +
+      ggthemes::theme_hc() +
+      theme(axis.text.x = element_text(angle = 45)) 
   
-  if (input$Log) { g <- g + scale_y_log10() }
+  if (input$Log) { 
+    g <- g + 
+      scale_y_log10(labels = scales::comma_format(accuracy = 1)) +
+      annotation_logticks() 
+    }
   
   if (input$PlotType %in% c(5, 6, 7)) { 
     
     if (input$Log) {
       
-      g <- g + scale_y_log10(labels = scales::percent_format(accuracy = 1))
+      g <- g + 
+        scale_y_log10(labels = scales::percent_format(accuracy = 1)) +
+        annotation_logticks()
     
     } else {
       
@@ -142,9 +162,38 @@ renderPlotly({
     }
   }
       
-  ggplotly(g)
+  ggplotly(g, tooltip = c("x", "y"))
   
 
+})
+
+```
+
+
+# Map
+
+```{r}
+covid_map <- full_join(covid, usmap::us_map(), by = c("state" = "abbr"))
+
+renderPlotly({
+
+  ll <- select_plot(input$PlotType)
+  
+  Y     = ll$Y
+  TITLE = ll$TITLE
+  
+  g_map <- covid_map %>% 
+    filter(date == max(date)) %>% 
+    mutate(state = full) %>% 
+    ggplot(aes(label = state)) +
+      geom_polygon(aes_string(x = "x", y = "y", group = "group", fill = Y), color = "white") +
+      coord_fixed(1) +
+      labs(title = TITLE) +
+      scale_fill_gradient2(low = "green", mid = "blue", high = "red") +
+      ggthemes::theme_map()
+        
+  ggplotly(g_map)
+    
 })
 
 ```
