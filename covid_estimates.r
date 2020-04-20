@@ -1,9 +1,10 @@
 library(tidyverse)
 library(gganimate)
+library(Cairo)
 
 covid <- read_csv("http://covidtracking.com/api/states/daily.csv")
 
-theme_set(ggthemes::theme_clean())
+theme_set(ggthemes::theme_clean(base_size = 18))
 
 logistic <- function(x, ymax, xmid, scal) { ymax / (1 + exp((xmid-x)/scal) ) }
 
@@ -37,8 +38,7 @@ for (day in covid_TOTAL$date %>% unique) {
           death_est     = logistic(id, us_death_est$estimate[1], us_death_est$estimate[2], us_death_est$estimate[3]),
         ) %>% 
         full_join(covid_total %>% select(id, date, death), by = "id") 
-  
-  },
+     },
   silent = TRUE)
   
 }
@@ -48,7 +48,7 @@ cvd_est <- bind_rows(covid_total_est, .id = "day")
 
 # animate --------------------------------------
 
-cvd_est %>%
+anim <- cvd_est %>%
   filter(day >= 20200406) %>% 
   ggplot(aes(x = id)) +
     geom_ribbon(aes(ymin = death_est_min, ymax = death_est_max),  alpha = 0.2) +
@@ -57,3 +57,5 @@ cvd_est %>%
     scale_y_continuous(labels = scales::comma) +
     labs(x = "days", y = "", title = "Covid death estimates for United States") +
   transition_manual(day)
+
+animate(anim, end_pause = 10, type = "cairo")
