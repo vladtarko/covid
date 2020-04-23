@@ -18,7 +18,7 @@ covid <- read_csv("http://covidtracking.com/api/states/daily.csv")
 covid_total <- read_csv("https://covidtracking.com/api/us.csv")
 
 covid <- covid %>% 
-  #mutate(date1 = date %>% as.character() %>% as.Date(format = "%Y%m%d")) %>%
+  # mutate(date1 = date %>% as.character() %>% as.Date(format = "%Y%m%d")) %>%
   mutate(date2 = as.Date(dateChecked)) %>% 
   group_by(state) %>% 
   mutate(positive_growth     = (positive - dplyr::lag(positive, order_by = date))/positive,

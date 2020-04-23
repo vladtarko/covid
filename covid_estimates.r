@@ -4,7 +4,7 @@ library(Cairo)
 
 covid <- read_csv("http://covidtracking.com/api/states/daily.csv")
 
-theme_set(ggthemes::theme_clean(base_size = 18))
+theme_set(theme_minimal(base_size = 18))
 
 logistic <- function(x, ymax, xmid, scal) { ymax / (1 + exp((xmid-x)/scal) ) }
 
