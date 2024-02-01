@@ -6,8 +6,6 @@ One for tracking COVID-19 in United States:
 
 - Code is in file "covid.rmd" 
 
-- Link to the live app: <http://tarko.shinyapps.io/covid>
-
 One for calculating the social costs under different scenarios and assumptions:
 
 - Code is in folder "Covid-costs"
